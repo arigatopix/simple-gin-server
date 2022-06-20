@@ -68,6 +68,7 @@ func getBook(ctx *gin.Context) {
 	for i, b := range books {
 		if b.ID == id {
 			book = books[i]
+			break
 		}
 	}
 
@@ -109,6 +110,7 @@ func deleteBook(ctx *gin.Context) {
 	for i, b := range books {
 		if b.ID == id {
 			book = books[i]
+			break
 		}
 	}
 
@@ -123,6 +125,7 @@ func deleteBook(ctx *gin.Context) {
 	for i, book := range books {
 		if book.ID == id {
 			books = append(books[:i], books[i+1:]...)
+			break
 		}
 	}
 
