@@ -1,0 +1,23 @@
+###
+GET http://localhost:5000/books 
+
+###
+POST http://localhost:5000/books
+Content-Type: application/json
+
+{
+  "ID": "4",
+  "Title": "Test",
+  "Author" : "Test Author"
+}
+
+###
+PUT http://localhost:5000/customers/1
+Content-Type: application/json
+
+{
+  "Email":"abojama71@gmail.com" 
+}
+
+###
+DELETE http://localhost:5000/books/4
