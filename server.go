@@ -71,6 +71,13 @@ func getBook(ctx *gin.Context) {
 		}
 	}
 
+	if book.ID == "" {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "Error: Book not found",
+		})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, book)
 }
 
@@ -96,6 +103,21 @@ func createBook(ctx *gin.Context) {
 func deleteBook(ctx *gin.Context) {
 
 	id := ctx.Param("id")
+
+	var book Book
+
+	for i, b := range books {
+		if b.ID == id {
+			book = books[i]
+		}
+	}
+
+	if book.ID == "" {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "Error: Book not found",
+		})
+		return
+	}
 
 	// นำออกจาก slice
 	for i, book := range books {
