@@ -2,6 +2,10 @@
 GET http://localhost:5000/books 
 
 ###
+GET http://localhost:5000/books/2
+
+
+###
 POST http://localhost:5000/books
 Content-Type: application/json
 
@@ -12,11 +16,12 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:5000/customers/1
+PUT http://localhost:5000/books/1
 Content-Type: application/json
 
 {
-  "Email":"abojama71@gmail.com" 
+  "Title":"update title",
+  "Author": "bas"
 }
 
 ###

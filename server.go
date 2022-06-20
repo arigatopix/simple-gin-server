@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,49 +21,88 @@ var books = []Book{
 func main() {
 	r := gin.New()
 
-	r.GET("/", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
-			"Hello": "world",
-		})
-	})
-
 	// GET /books
-	r.GET("/books", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, books)
-	})
+	r.GET("/books", getBooks)
+
+	// GET /books/:id
+	r.GET("/books/:id", getBook)
 
 	// POST /books
-	r.POST("/books", func(ctx *gin.Context) {
-		var book Book
+	r.POST("/books", createBook)
 
-		if err := ctx.ShouldBindJSON(&book); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error": "Error:" + err.Error(),
-			})
-			return
-		}
-
-		books = append(books, book)
-
-		fmt.Println(books)
-
-		ctx.JSON(http.StatusCreated, book)
-	})
+	// PUT /books/:id
+	r.PUT("/books/:id", updateBook)
 
 	// DELETE /books/:id
-	r.DELETE("/books/:id", func(ctx *gin.Context) {
-
-		id := ctx.Param("id")
-
-		// นำออกจาก slice
-		for i, book := range books {
-			if book.ID == id {
-				books = append(books[:i], books[i+1:]...)
-			}
-		}
-
-		ctx.Status(http.StatusNoContent)
-	})
+	r.DELETE("/books/:id", deleteBook)
 
 	r.Run(":5000")
+}
+
+func updateBook(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	var book Book
+
+	if err := ctx.ShouldBindJSON(&book); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error:" + err.Error(),
+		})
+		return
+	}
+
+	updatedBook := Book{
+		ID:     id,
+		Title:  book.Title,
+		Author: book.Author,
+	}
+
+	ctx.JSON(http.StatusOK, updatedBook)
+}
+
+func getBook(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	var book Book
+
+	for i, b := range books {
+		if b.ID == id {
+			book = books[i]
+		}
+	}
+
+	ctx.JSON(http.StatusOK, book)
+}
+
+func getBooks(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, books)
+}
+
+func createBook(ctx *gin.Context) {
+	var book Book
+
+	if err := ctx.ShouldBindJSON(&book); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error:" + err.Error(),
+		})
+		return
+	}
+
+	books = append(books, book)
+
+	ctx.JSON(http.StatusCreated, book)
+}
+
+func deleteBook(ctx *gin.Context) {
+
+	id := ctx.Param("id")
+
+	// นำออกจาก slice
+	for i, book := range books {
+		if book.ID == id {
+			books = append(books[:i], books[i+1:]...)
+		}
+	}
+
+	ctx.Status(http.StatusNoContent)
 }
