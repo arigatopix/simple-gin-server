@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 type Book struct {
@@ -12,13 +14,21 @@ type Book struct {
 	Author string `json:"author"`
 }
 
-var books = []Book{
-	{ID: "1", Title: "Harry Potter", Author: "J. K. Rowling"},
-	{ID: "2", Title: "The Lord of the Rings", Author: "J. R. R. Tolkien"},
-	{ID: "3", Title: "The Wizard of Oz", Author: "L. Frank Baum"},
-}
+var db *gorm.DB
 
 func main() {
+	var err error
+
+	db, err = gorm.Open(sqlite.Open("book.db"), &gorm.Config{})
+
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	db.AutoMigrate(&Book{})
+
+	db.DB()
+
 	r := gin.New()
 
 	// GET /books
@@ -51,39 +61,48 @@ func updateBook(ctx *gin.Context) {
 		return
 	}
 
-	updatedBook := Book{
+	updateBook := Book{
 		ID:     id,
 		Title:  book.Title,
 		Author: book.Author,
 	}
 
-	ctx.JSON(http.StatusOK, updatedBook)
-}
-
-func getBook(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	var book Book
-
-	for i, b := range books {
-		if b.ID == id {
-			book = books[i]
-			break
-		}
-	}
-
-	if book.ID == "" {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "Error: Book not found",
+	if result := db.Model(&Book{}).Where("ID = ?", id).Updates(updateBook); result.Error != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error:" + result.Error.Error(),
 		})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, book)
+	ctx.JSON(http.StatusOK, &updateBook)
+}
+
+func getBook(ctx *gin.Context) {
+
+	id := ctx.Param("id")
+
+	var book Book
+
+	if result := db.First(&book, id); result.Error != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error:" + result.Error.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, &book)
 }
 
 func getBooks(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, books)
+	var books []Book
+
+	if result := db.Find(&books); result.Error != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": result.Error.Error(),
+		})
+	}
+
+	ctx.JSON(http.StatusOK, &books)
 }
 
 func createBook(ctx *gin.Context) {
@@ -96,37 +115,33 @@ func createBook(ctx *gin.Context) {
 		return
 	}
 
-	books = append(books, book)
+	result := db.Create(&book)
 
-	ctx.JSON(http.StatusCreated, book)
+	if result.Error != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": result.Error.Error(),
+		})
+	}
+
+	ctx.JSON(http.StatusCreated, &book)
 }
 
 func deleteBook(ctx *gin.Context) {
 
 	id := ctx.Param("id")
 
-	var book Book
-
-	for i, b := range books {
-		if b.ID == id {
-			book = books[i]
-			break
-		}
-	}
-
-	if book.ID == "" {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "Error: Book not found",
+	if result := db.First(&Book{}, id); result.Error != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error:" + result.Error.Error(),
 		})
 		return
 	}
 
-	// นำออกจาก slice
-	for i, book := range books {
-		if book.ID == id {
-			books = append(books[:i], books[i+1:]...)
-			break
-		}
+	if result := db.Delete(&Book{}, id); result.Error != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error:" + result.Error.Error(),
+		})
+		return
 	}
 
 	ctx.Status(http.StatusNoContent)
