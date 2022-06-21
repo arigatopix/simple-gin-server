@@ -3,26 +3,20 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 
-	c "gin-webservice/controllers"
+	rg "gin-webservice/routes"
 )
 
 func main() {
+	RunServer()
+}
+
+func RunServer() {
 	r := gin.New()
 
-	// GET /books
-	r.GET("/books", c.GetBooks)
-
-	// GET /books/:id
-	r.GET("/books/:id", c.GetBook)
-
-	// POST /books
-	r.POST("/books", c.CreateBook)
-
-	// PUT /books/:id
-	r.PUT("/books/:id", c.UpdateBook)
-
-	// DELETE /books/:id
-	r.DELETE("/books/:id", c.DeleteBook)
+	apiGroups := r.Group("/api")
+	{
+		rg.Routes(apiGroups)
+	}
 
 	r.Run(":5000")
 }
