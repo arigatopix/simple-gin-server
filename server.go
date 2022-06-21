@@ -14,15 +14,7 @@ type Book struct {
 	Author string `json:"author"`
 }
 
-type Handler struct {
-	db *gorm.DB
-}
-
-func connectDB(db *gorm.DB) *Handler {
-	return &Handler{db}
-}
-
-func main() {
+func connectDB() *gorm.DB {
 	db, err := gorm.Open(sqlite.Open("book.db"), &gorm.Config{})
 
 	if err != nil {
@@ -31,32 +23,36 @@ func main() {
 
 	db.AutoMigrate(&Book{})
 
-	// create new connection instance
-	// แต่ละ route เป็น instance ของ db
-	handler := connectDB(db)
+	return db
+}
+
+func main() {
+	connectDB()
 
 	r := gin.New()
 
 	// GET /books
-	r.GET("/books", handler.getBooks)
+	r.GET("/books", getBooks)
 
 	// GET /books/:id
-	r.GET("/books/:id", handler.getBook)
+	r.GET("/books/:id", getBook)
 
 	// POST /books
-	r.POST("/books", handler.createBook)
+	r.POST("/books", createBook)
 
 	// PUT /books/:id
-	r.PUT("/books/:id", handler.updateBook)
+	r.PUT("/books/:id", updateBook)
 
 	// DELETE /books/:id
-	r.DELETE("/books/:id", handler.deleteBook)
+	r.DELETE("/books/:id", deleteBook)
 
 	r.Run(":5000")
 }
 
-func (h *Handler) updateBook(ctx *gin.Context) {
+func updateBook(ctx *gin.Context) {
 	id := ctx.Param("id")
+
+	db := connectDB()
 
 	var book Book
 
@@ -75,7 +71,7 @@ func (h *Handler) updateBook(ctx *gin.Context) {
 
 	// h.db -> เรียกใช้ struct Handler.db นะได้ db *gorm.DB
 	// เรียก instance ใหม่ทุกครั้งที่มี route เข้ามา
-	if result := h.db.Model(&Book{}).Where("ID = ?", id).Updates(updateBook); result.Error != nil {
+	if result := db.Model(&Book{}).Where("ID = ?", id).Updates(updateBook); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Error:" + result.Error.Error(),
 		})
@@ -85,13 +81,14 @@ func (h *Handler) updateBook(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, &updateBook)
 }
 
-func (h *Handler) getBook(ctx *gin.Context) {
+func getBook(ctx *gin.Context) {
+	db := connectDB()
 
 	id := ctx.Param("id")
 
 	var book Book
 
-	if result := h.db.First(&book, id); result.Error != nil {
+	if result := db.First(&book, id); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Error:" + result.Error.Error(),
 		})
@@ -101,10 +98,12 @@ func (h *Handler) getBook(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, &book)
 }
 
-func (h *Handler) getBooks(ctx *gin.Context) {
+func getBooks(ctx *gin.Context) {
+	db := connectDB()
+
 	var books []Book
 
-	if result := h.db.Find(&books); result.Error != nil {
+	if result := db.Find(&books); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": result.Error.Error(),
 		})
@@ -113,7 +112,9 @@ func (h *Handler) getBooks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, &books)
 }
 
-func (h *Handler) createBook(ctx *gin.Context) {
+func createBook(ctx *gin.Context) {
+	db := connectDB()
+
 	var book Book
 
 	if err := ctx.ShouldBindJSON(&book); err != nil {
@@ -123,7 +124,7 @@ func (h *Handler) createBook(ctx *gin.Context) {
 		return
 	}
 
-	result := h.db.Create(&book)
+	result := db.Create(&book)
 
 	if result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -134,18 +135,19 @@ func (h *Handler) createBook(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, &book)
 }
 
-func (h *Handler) deleteBook(ctx *gin.Context) {
+func deleteBook(ctx *gin.Context) {
+	db := connectDB()
 
 	id := ctx.Param("id")
 
-	if result := h.db.First(&Book{}, id); result.Error != nil {
+	if result := db.First(&Book{}, id); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Error:" + result.Error.Error(),
 		})
 		return
 	}
 
-	if result := h.db.Delete(&Book{}, id); result.Error != nil {
+	if result := db.Delete(&Book{}, id); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Error:" + result.Error.Error(),
 		})
