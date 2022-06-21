@@ -6,44 +6,48 @@ import (
 	"github.com/gin-gonic/gin"
 
 	db "gin-webservice/db"
+	model "gin-webservice/models"
 )
-
-type Book struct {
-	ID     string `json:"id"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-}
 
 func UpdateBook(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	db := db.ConnectDB()
 
-	var book Book
+	var book model.Book
 
-	if err := ctx.ShouldBindJSON(&book); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Error:" + err.Error(),
-		})
-		return
-	}
-
-	updateBook := Book{
-		ID:     id,
-		Title:  book.Title,
-		Author: book.Author,
-	}
-
-	// h.db -> เรียกใช้ struct Handler.db นะได้ db *gorm.DB
-	// เรียก instance ใหม่ทุกครั้งที่มี route เข้ามา
-	if result := db.Model(&Book{}).Where("ID = ?", id).Updates(updateBook); result.Error != nil {
+	if result := db.First(&book, id); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Error:" + result.Error.Error(),
 		})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &updateBook)
+	var bookFromBody model.Book
+
+	if err := ctx.ShouldBindJSON(&bookFromBody); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error:" + err.Error(),
+		})
+		return
+	}
+
+	updatedBook := model.Book{
+		ID:     book.ID,
+		Title:  bookFromBody.Title,
+		Author: bookFromBody.Author,
+	}
+
+	// h.db -> เรียกใช้ struct Handler.db นะได้ db *gorm.DB
+	// เรียก instance ใหม่ทุกครั้งที่มี route เข้ามา
+	if result := db.Model(&model.Book{}).Where("ID = ?", id).Updates(updatedBook); result.Error != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error:" + result.Error.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, &updatedBook)
 }
 
 func GetBook(ctx *gin.Context) {
@@ -51,7 +55,7 @@ func GetBook(ctx *gin.Context) {
 
 	id := ctx.Param("id")
 
-	var book Book
+	var book model.Book
 
 	if result := db.First(&book, id); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -66,7 +70,7 @@ func GetBook(ctx *gin.Context) {
 func GetBooks(ctx *gin.Context) {
 	db := db.ConnectDB()
 
-	var books []Book
+	var books []model.Book
 
 	if result := db.Find(&books); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -80,7 +84,7 @@ func GetBooks(ctx *gin.Context) {
 func CreateBook(ctx *gin.Context) {
 	db := db.ConnectDB()
 
-	var book Book
+	var book model.Book
 
 	if err := ctx.ShouldBindJSON(&book); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -105,14 +109,14 @@ func DeleteBook(ctx *gin.Context) {
 
 	id := ctx.Param("id")
 
-	if result := db.First(&Book{}, id); result.Error != nil {
+	if result := db.First(&model.Book{}, id); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Error:" + result.Error.Error(),
 		})
 		return
 	}
 
-	if result := db.Delete(&Book{}, id); result.Error != nil {
+	if result := db.Delete(&model.Book{}, id); result.Error != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Error:" + result.Error.Error(),
 		})
