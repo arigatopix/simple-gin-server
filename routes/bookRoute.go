@@ -1,4 +1,4 @@
-package book
+package routes
 
 import (
 	c "gin-webservice/controllers"
@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Routes(group *gin.RouterGroup) {
+func BookRoutes(group *gin.RouterGroup) {
 	route := group.Group("/books")
 	{
 		// GET /books

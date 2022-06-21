@@ -14,7 +14,7 @@ func ConnectDB() *gorm.DB {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&model.Book{})
+	db.AutoMigrate(&model.Book{}, &model.Todo{})
 
 	return db
 }

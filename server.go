@@ -17,7 +17,8 @@ func RunServer() {
 
 	apiGroups := r.Group("/api")
 	{
-		rg.Routes(apiGroups)
+		rg.BookRoutes(apiGroups)
+		rg.TodoRoutes(apiGroups)
 	}
 
 	r.Run(":5000")

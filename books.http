@@ -1,4 +1,36 @@
 ###
+GET http://localhost:5000/api/todos 
+
+###
+GET http://localhost:5000/api/todos/3
+
+
+###
+POST http://localhost:5000/api/todos
+Content-Type: application/json
+
+{
+  "Text": "TEST", 
+  "Day": "TEST", 
+  "Reminder": "TRUE", 
+}
+
+###
+POST http://localhost:5000/api/todos
+Content-Type: application/json
+
+{
+  "Text": "Harry Potter", 
+  "Day": "26/6/2565", 
+  "Reminder": "FALSE", 
+}
+
+
+###
+DELETE http://localhost:5000/api/todos/4
+
+
+###
 GET http://localhost:5000/api/books 
 
 ###
